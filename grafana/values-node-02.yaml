@@ -1,0 +1,66 @@
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  path: /
+  pathType: Prefix
+  hosts:
+    - grafana.node-02
+
+persistence:
+  type: pvc
+  enabled: true
+
+adminUser: admin
+adminPassword: admin
+
+datasources: 
+  datasources.yaml:
+    apiVersion: 1
+
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus
+        #url: http://prometheus-server.monitoring.svc.cluster.local
+        #url: http://mimir-grafana-mimir-gateway.monitoring.svc.cluster.local:80/prometheus
+        url: http://vmsingle-vm-single.monitoring:8428
+        jsonData:
+          timeInterval: 60s
+          exemplarTraceIdDestinations:
+            - name: trace_id
+              datasourceUid: tempo
+              urlDisplayLabel: "Trace: $${__value.raw}"
+      - name: Tempo
+        type: tempo
+        uid: tempo
+        url: http://tempo.monitoring.svc.cluster.local:3200
+        jsonData:
+          tracesToLogsV2:
+            customQuery: true
+            datasourceUid: "loki"
+            query: '{$${__tags}} | trace_id = "$${__trace.traceId}"'
+            tags:
+              - key: "service.name"
+                value: "service_name"
+
+          serviceMap:
+            datasourceUid: "prometheus"
+          search:
+            hide: false
+          nodeGraph:
+            enabled: true
+          lokiSearch:
+            datasourceUid: "loki"
+      - name: Loki
+        type: loki
+        uid: loki
+        url: http://loki-gateway.monitoring.svc.cluster.local
+        jsonData:
+          derivedFields:
+            - name: "trace_id"
+              matcherType: "label"
+              matcherRegex: "trace_id"
+              url: "$${__value.raw}"
+              datasourceUid: "tempo"
+              urlDisplayLabel: "Trace: $${__value.raw}"
+

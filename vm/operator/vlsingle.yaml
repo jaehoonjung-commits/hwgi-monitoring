@@ -1,0 +1,8 @@
+apiVersion: operator.victoriametrics.com/v1
+kind: VLSingle
+metadata:
+  name: vl-single
+spec:
+  image:
+    repository: victoriametrics/victoria-logs
+    tag: v1.26.0

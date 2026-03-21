@@ -679,7 +679,7 @@ datasources:
         uid: prometheus
         #url: http://prometheus-server.monitoring.svc.cluster.local
         #url: http://mimir-grafana-mimir-gateway.monitoring.svc.cluster.local:80/prometheus
-        url: http://grafana-mimir-gateway.monitoring.svc:80/prometheus
+        url: http://mimir-gateway.monitoring.svc:80/prometheus
         jsonData:
           timeInterval: 60s
           exemplarTraceIdDestinations:

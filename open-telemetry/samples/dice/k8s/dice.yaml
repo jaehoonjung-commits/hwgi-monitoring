@@ -35,7 +35,7 @@ spec:
             - containerPort: 8080
           env:
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: "http://otel-collector-opentelemetry-collector.monitoring:4318"
+              value: "http://apps-opentelemetry-collector.monitoring:4318"
             - name: OTEL_LOGS_EXPORTER
               value: "otlp"
             - name: OTEL_RESOURCE_ATTRIBUTES
@@ -58,7 +58,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: dice.node-01
+  - host: dice.node-02
     http:
       paths:
       - backend:

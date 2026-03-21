@@ -30,17 +30,12 @@ presets:
 config:
   exporters:
     debug: {}
-    prometheusremotewrite:
-      #endpoint: http://mimir-grafana-mimir-gateway.monitoring.svc.cluster.local:80/api/v1/push
-      endpoint: http://grafana-mimir-gateway.monitoring.svc:80/api/v1/push
-    otlphttp/metrics:
-      endpoint: http://prometheus-server.monitoring.svc.cluster.local:80/api/v1/otlp
-    otlphttp/traces:
-      endpoint: http://tempo.monitoring.svc.cluster.local:4318
-      tls:
-        insecure: true
-    otlphttp/logs:
-      endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp
+    otlphttp:
+      compression: gzip
+      encoding: proto
+      metrics_endpoint: http://vmsingle-vm-single:8428/opentelemetry/v1/metrics
+      logs_endpoint: http://vlsingle-vl-single:9428/insert/opentelemetry/v1/logs
+      traces_endpoint: http://vtsingle-vt-single:10428/insert/opentelemetry/v1/traces
       tls:
         insecure: true
     debug/metrics:
@@ -71,31 +66,36 @@ config:
           endpoint: ${env:MY_POD_IP}:4317
         http:
           endpoint: ${env:MY_POD_IP}:4318
+          cors:
+            allowed_origins:
+              - "http://localhost:3000"
+            allowed_headers:
+              - "*"
     prometheus:
       config:
         scrape_configs:
           - job_name: 'node-exporter'
             static_configs:
             - targets: ['prometheus-prometheus-node-exporter:9100']
+    journald:
+      directory: /var/log/journal
   service:
     extensions:
       - health_check
     pipelines:
       logs:
         exporters:
-          - debug
-          - otlphttp/logs
+          - otlphttp
         processors:
           - memory_limiter
           - resourcedetection
           - batch
         receivers:
           - otlp
+          - journald
       metrics:
         exporters:
-          - debug
-          - otlphttp/metrics
-          - prometheusremotewrite
+          - otlphttp
           - prometheus
         processors:
           - memory_limiter
@@ -106,8 +106,7 @@ config:
           - prometheus
       traces:
         exporters:
-          - debug
-          - otlphttp/traces
+          - otlphttp
         processors:
           - memory_limiter
           - resourcedetection
@@ -116,13 +115,22 @@ config:
           - otlp
 
 image:
-  #repository: "ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-k8s"
-  repository: "otel/opentelemetry-collector-contrib"
+  #repository: "otel/opentelemetry-collector-contrib"
+  repository: "otelcol"
   pullPolicy: IfNotPresent
-  tag: "latest"
+  tag: "v1"
 
 command:
-  #name: "otelcol-k8s"
   name: "otelcol-contrib"
   extraArgs: []
 
+extraVolumeMounts:
+  - mountPath: /var/log/journal
+    name: journal
+    readOnly: true
+
+extraVolumes:
+  - hostPath:
+      path: /var/log/journal
+      type: ""
+    name: journal

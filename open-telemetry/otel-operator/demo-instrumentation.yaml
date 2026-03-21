@@ -4,7 +4,7 @@ metadata:
   name: demo-instrumentation
 spec:
   exporter:
-    endpoint: http://otel-collector-opentelemetry-collector.monitoring:4318
+    endpoint: http://apps-opentelemetry-collector.monitoring:4318
   propagators:
     - tracecontext
     - baggage

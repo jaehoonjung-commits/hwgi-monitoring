@@ -20,8 +20,10 @@ tempo:
       path: "/tmp/traces"
     storage:
       remote_write: 
-        #- url: "http://mimir-grafana-mimir-gateway.monitoring.svc.cluster.local:80/api/v1/push" 
-        - url: "http://grafana-mimir-gateway.monitoring.svc:80/api/v1/push"
+        # mimir
+        #- url: "http://mimir-gateway.monitoring.svc:80/api/v1/push"
+        # victoriametrics
+        - url: "http://vmsingle-vm-single.monitoring.svc:8428/api/v1/write"
   overrides:
     defaults: 
       metrics_generator:

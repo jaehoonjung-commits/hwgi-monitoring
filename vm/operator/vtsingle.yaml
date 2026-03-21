@@ -1,0 +1,6 @@
+apiVersion: operator.victoriametrics.com/v1
+kind: VTSingle
+metadata:
+  name: vt-single
+spec:
+  retentionPeriod: "12"

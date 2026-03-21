@@ -242,7 +242,7 @@ overrides_exporter:
   enabled: true
 
 ruler:
-  enabled: false
+  enabled: true
 
 querier:
   enabled: true
@@ -255,7 +255,7 @@ query_scheduler:
   enabled: true
 
 store_gateway:
-  enabled: false
+  enabled: true
 
 compactor:
   enabled: true
