@@ -6,3 +6,10 @@ spec:
   image:
     repository: victoriametrics/victoria-logs
     tag: v1.26.0
+  storage:
+    storageClassName: "local-path"
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 50Gi
