@@ -18,7 +18,7 @@ datasources:
       - name: Prometheus
         type: prometheus
         uid: prometheus
-        url: http://vmsingle-vm-single.monitoring:8428
+        url: http://vmsingle-vmsingle-victoria-metrics-k8s-stack.monitoring:8428
         jsonData:
           timeInterval: 60s
           exemplarTraceIdDestinations:

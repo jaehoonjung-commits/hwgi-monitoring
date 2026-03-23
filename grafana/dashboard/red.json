@@ -57,7 +57,7 @@
             {
               "targetBlank": true,
               "title": "Trace 확인 ",
-              "url": "http://grafana.node-01/explore?schemaVersion=1&panes={\"ha1\":{\"datasource\":\"tempo\",\"queries\":[{\"query\":\"${__data.fields.traceID}\",\"datasource\":{\"type\":\"tempo\",\"uid\":\"tempo\"},\"refId\":\"A\"}]}}&orgId=1"
+              "url": "http://grafana.kw-home/explore?schemaVersion=1&panes={\"ha1\":{\"datasource\":\"tempo\",\"queries\":[{\"query\":\"${__data.fields.traceID}\",\"datasource\":{\"type\":\"tempo\",\"uid\":\"tempo\"},\"refId\":\"A\"}]}}&orgId=1"
             }
           ],
           "mappings": [],
@@ -236,7 +236,7 @@
             {
               "targetBlank": true,
               "title": "Trace 확인",
-              "url": "http://grafana.node-01/explore?schemaVersion=1&panes={\"ha1\":{\"datasource\":\"tempo\",\"queries\":[{\"query\":\"${__data.fields.traceID}\",\"datasource\":{\"type\":\"jaeger\",\"uid\":\"tempo\"},\"refId\":\"A\"}]}}&orgId=1"
+              "url": "http://grafana.kw-home/explore?schemaVersion=1&panes={\"ha1\":{\"datasource\":\"tempo\",\"queries\":[{\"query\":\"${__data.fields.traceID}\",\"datasource\":{\"type\":\"jaeger\",\"uid\":\"tempo\"},\"refId\":\"A\"}]}}&orgId=1"
             }
           ],
           "mappings": [],
@@ -345,6 +345,15 @@
                 "$service"
               ],
               "valueType": "string"
+            },
+            {
+              "id": "status",
+              "isCustomValue": false,
+              "operator": "=",
+              "scope": "intrinsic",
+              "tag": "status",
+              "value": "error",
+              "valueType": "keyword"
             }
           ],
           "limit": 20,
@@ -400,7 +409,7 @@
               "oneClick": false,
               "targetBlank": true,
               "title": "Trace 확인",
-              "url": "http://grafana.node-01/explore?schemaVersion=1&panes={\"ha1\":{\"datasource\":\"tempo\",\"queries\":[{\"query\":\"${__data.fields.traceID}\",\"datasource\":{\"type\":\"jaeger\",\"uid\":\"tempo\"},\"refId\":\"A\"}]}}&orgId=1"
+              "url": "http://grafana.kw-home/explore?schemaVersion=1&panes={\"ha1\":{\"datasource\":\"tempo\",\"queries\":[{\"query\":\"${__data.fields.traceID}\",\"datasource\":{\"type\":\"jaeger\",\"uid\":\"tempo\"},\"refId\":\"A\"}]}}&orgId=1"
             }
           ],
           "mappings": [],
@@ -633,6 +642,15 @@
                 "$service"
               ],
               "valueType": "string"
+            },
+            {
+              "id": "status",
+              "isCustomValue": false,
+              "operator": "=",
+              "scope": "intrinsic",
+              "tag": "status",
+              "value": "error",
+              "valueType": "keyword"
             }
           ],
           "limit": 100,
@@ -849,7 +867,7 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},

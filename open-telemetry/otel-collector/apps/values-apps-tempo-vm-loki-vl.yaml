@@ -7,8 +7,13 @@ config:
       endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp
       tls:
         insecure: true
-    otlphttp/metrics:
-      endpoint: http://vmsingle-vm-single.monitoring:84280/opentelemetry/v1/metrics
+    otlphttp/victoriametrics:
+      compression: gzip
+      encoding: proto
+      metrics_endpoint: http://vmsingle-vm-single:8428/opentelemetry/v1/metrics
+      logs_endpoint: http://vlsingle-vl-single:9428/insert/opentelemetry/v1/logs
+      tls:
+        insecure: true
     otlphttp/traces:
       endpoint: http://tempo.monitoring.svc.cluster.local:4318
       tls:
@@ -78,7 +83,7 @@ config:
       metrics:
         exporters:
           - debug
-          - otlphttp/metrics
+          - otlphttp/victoriametrics
         processors:
           - memory_limiter
           - batch

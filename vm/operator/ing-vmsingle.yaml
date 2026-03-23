@@ -16,22 +16,3 @@ spec:
               number: 8429
         path: /
         pathType: Prefix
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: vlsingle
-  namespace: monitoring
-spec:
-  ingressClassName: nginx
-  rules:
-  - host: vl-single.kw-home
-    http:
-      paths:
-      - backend:
-          service:
-            name: vlsingle-vl-single
-            port: 
-              number: 9428
-        path: /
-        pathType: Prefix

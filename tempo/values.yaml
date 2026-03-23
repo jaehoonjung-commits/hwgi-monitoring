@@ -23,7 +23,7 @@ tempo:
         # mimir
         #- url: "http://mimir-gateway.monitoring.svc:80/api/v1/push"
         # victoriametrics
-        - url: "http://vmsingle-vm-single.monitoring.svc:8428/api/v1/write"
+        - url: "http://vmsingle-vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/write"
   overrides:
     defaults: 
       metrics_generator:
