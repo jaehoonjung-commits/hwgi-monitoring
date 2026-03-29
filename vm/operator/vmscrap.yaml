@@ -1,0 +1,16 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMScrapeConfig
+metadata:
+  name: cadvisior
+spec:
+  kubernetesSDConfigs:
+  - role: node
+  bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  tlsConfig:
+    caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  metricsPath: /metrics/cadvisor
+  relabelConfigs:
+  - action: replace
+    sourceLabels:
+    - __meta_consul_service
+    targetLabel: job
