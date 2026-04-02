@@ -2,12 +2,12 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: otel-collector-sa
+  name: otelcol-k8s-sa
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: otel-collector-role
+  name: otelcol-k8s-role
 rules:
   - apiGroups: [""]
     resources:
@@ -28,6 +28,10 @@ rules:
     resources:
       - ingresses
     verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources:
+      - replicasets
+    verbs: ["get", "list", "watch"]
   - nonResourceURLs:
       - /metrics
     verbs: ["get"]
@@ -35,31 +39,32 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: otel-collector-binding
+  name: otelcol-k8s-binding
 subjects:
   - kind: ServiceAccount
-    name: otel-collector-sa
+    name: otelcol-k8s-sa
     namespace: monitoring
 roleRef:
   kind: ClusterRole
-  name: otel-collector-role
+  name: otelcol-k8s-role
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: otel-collector-conf
+  name: otelcol-k8s-config
 data:
-  otel-collector-config: |
+  otelcol-k8s-config: |
     receivers:
-      otlp:
-        protocols:
-          grpc:
-            endpoint: 0.0.0.0:4317
-          http:
-            endpoint: 0.0.0.0:4318
       journald:
         directory: /var/log/journal
+      filelog/otlp-json-logs:
+        include:
+          - /var/log/pods/*/*/*.log
+        include_file_path: true
+        operators:
+          - id: container-parser
+            type: container
       prometheus:
         config:
           scrape_configs:
@@ -376,98 +381,93 @@ data:
               ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
             bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
     processors:
-      batch:
+      resourcedetection:
+        detectors: [ "env", "system" ]
+        override: false
       attributes/add_cluster:
         actions:
-          - key: k8s.cluster.name
+          - key: cluster
             value: "node-02"
-            #value: "node-02"
             action: insert
+      k8sattributes:
+    connectors:
+      otlpjson:
     exporters:
       debug:
         verbosity: detailed
-      prometheusremotewrite:
-        endpoint: http://vmsingle-vm-single:8428/api/v1/push
-        external_labels:
-          cluster: kw-home
-          k8s.cluster.name: kw-home
-      #otlp:
-      #  endpoint: http://192.168.0.98:31518
-      #  tls:
-      #    insecure: true
-      #otlphttp/logs:
-      #  endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp
-      #  tls:
-      #    insecure: true
-      #otlphttp/victoriametrics:
-      #  metrics_endpoint: http://vmsingle-vm-single.monitoring:8428/opentelemetry/v1/metrics
+      otlphttp:
+        endpoint: http://otelcol-gateway.monitoring:4318
+        tls:
+          insecure: true
     service:
       telemetry:
         logs:
           level: debug
       pipelines:
-        metrics:
-          receivers: [otlp, prometheus]
-          processors: [batch, attributes/add_cluster]
-          exporters: [prometheusremotewrite]
-      #  logs:
-      #    receivers: [otlp]
-      #    processors: [batch]
-      #    exporters: [otlphttp/logs]
+        metrics/k8s:
+          receivers: [ prometheus ]
+          processors: [ k8sattributes, resourcedetection, attributes/add_cluster ]
+          exporters: [ otlphttp ]
+        logs/jouarnald:
+          receivers: [ journald ]
+          processors: [ k8sattributes, resourcedetection ]
+          exporters: [ otlphttp ]
+        logs/raw_otlpjson:
+          receivers: [ filelog/otlp-json-logs ]
+          processors: [ ]
+          exporters: [ otlpjson ]
+        logs/otlp:
+          receivers: [ otlpjson ]
+          processors: [ k8sattributes, resourcedetection, attributes/add_cluster ]
+          exporters: [ otlphttp ]
+        logs/node:
+          receivers: [ filelog/otlp-json-logs ]
+          processors: [ k8sattributes, resourcedetection, attributes/add_cluster ]
+          exporters: [ otlphttp ]
 ---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: otel-collector
+  name: otelcol-k8s
 spec:
   selector:
     matchLabels:
-      app: otel-collector
+      app: otelcol-k8s
   template:
     metadata:
       labels:
-        app: otel-collector
+        app: otelcol-k8s
     spec:
-      serviceAccountName: otel-collector-sa
+      serviceAccountName: otelcol-k8s-sa
       containers:
-      - name: otel-collector
+      - name: otelcol-k8s
         image: otelcol:v1
         command:
         - "/otelcol-contrib"
-        - "--config=/conf/otel-collector-config"
+        - "--config=/conf/otelcol-k8s-config"
         ports:
         - containerPort: 4317 # OTLP gRPC
         - containerPort: 4318 # OTLP HTTP
         volumeMounts:
-        - name: otel-collector-config-vol
+        - name: otelcol-k8s-config
           mountPath: /conf
-        - name: journal-volume
+        - name: journal
           mountPath: /var/log/journal
           readOnly: true
+        - name: varlogpods
+          mountPath: /var/log/pods
+          readOnly: true
       volumes:
-        - name: otel-collector-config-vol
+        - name: otelcol-k8s-config
           configMap:
-            name: otel-collector-conf
+            name: otelcol-k8s-config
             items:
-              - key: otel-collector-config
-                path: otel-collector-config
-        - name: journal-volume
+              - key: otelcol-k8s-config
+                path: otelcol-k8s-config
+        - name: journal
           hostPath:
             path: /var/log/journal/
             type: Directory
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: otel-collector
-spec:
-  ports:
-  - name: otlp-grpc
-    port: 4317
-    targetPort: 4317
-  - name: otlp-http
-    port: 4318
-    targetPort: 4318
-  selector:
-    app: otel-collector
-
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods

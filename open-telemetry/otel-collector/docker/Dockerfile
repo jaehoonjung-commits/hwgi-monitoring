@@ -3,7 +3,7 @@ FROM debian:13-slim
 ARG OTEL_COL_VERSION=0.148.0
 
 RUN apt update && \
-    apt install -y systemd wget && \
+    apt install -y systemd wget vim curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

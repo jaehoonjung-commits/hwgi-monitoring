@@ -9,9 +9,19 @@ persistence:
   size: 10Gi
 
 tempo:
+  retention: 744h
+  storage:
+    trace:
+      backend: s3
+      s3:
+        bucket: traces
+        endpoint: loki-minio.monitoring.svc:9000
+        access_key: root-user
+        secret_key: supersecretpassword
+        insecure: true               
+        forcepathstyle: true
   metricsGenerator:
     enabled: true
-    #remoteWriteUrl: "http://prometheus-server.monitoring.svc.cluster.local:80/api/v1/write"
     processor: 
       service_graphs: {}
       span_metrics: {}

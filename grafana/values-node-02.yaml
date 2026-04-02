@@ -21,8 +21,6 @@ datasources:
       - name: Prometheus
         type: prometheus
         uid: prometheus
-        #url: http://prometheus-server.monitoring.svc.cluster.local
-        #url: http://mimir-grafana-mimir-gateway.monitoring.svc.cluster.local:80/prometheus
         url: http://vmsingle-vm-single.monitoring:8428
         jsonData:
           timeInterval: 60s

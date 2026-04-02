@@ -4,7 +4,7 @@ metadata:
   name: demo-instrumentation
 spec:
   exporter:
-    endpoint: http://apps-opentelemetry-collector.monitoring:4318
+    endpoint: http://otelcol-gateway.monitoring:4318
   propagators:
     - tracecontext
     - baggage
@@ -15,7 +15,7 @@ spec:
     image: ghcr.io/open-telemetry/opentelemetry-operator/autoinstrumentation-java:2.26.1
     env:
       - name: OTEL_LOGS_EXPORTER
-        value: "otlp"
+        value: "experimental-otlp/stdout"
       - name: OTEL_INSTRUMENTATION_LOGBACK_APPENDER_EXPERIMENTAL_LOG_ATTRIBUTES
         value: "true"
       - name: OTEL_INSTRUMENTATION_LOGBACK_APPENDER_EXPERIMENTAL_CAPTURE_KEY_VALUE_PAIR_ATTRIBUTES
@@ -28,3 +28,7 @@ spec:
         value: http/protobuf
       - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
         value: http/protobuf
+  nodejs:
+    env:
+      - name: OTEL_LOGS_EXPORTER
+        value: "console"

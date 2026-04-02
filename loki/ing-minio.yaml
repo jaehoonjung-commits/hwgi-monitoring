@@ -1,18 +1,18 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: book-info
-  namespace: sample
+  name: ing-minio
+  namespace: monitoring
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
-  - host: bookinfo.node-02
+  - host: minio.node-02
     http:
       paths:
       - backend:
           service:
-            name: productpage
+            name: loki-minio-console
             port:
-              number: 9080
+              number: 9001
         path: /
         pathType: Prefix

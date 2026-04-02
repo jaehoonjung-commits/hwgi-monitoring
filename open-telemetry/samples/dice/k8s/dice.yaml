@@ -29,8 +29,8 @@ spec:
     spec:
       containers:
         - name: dice
-          image: flytux/dice:v1
-          imagePullPolicy: Always
+          image: flytux/dice
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
 ---
