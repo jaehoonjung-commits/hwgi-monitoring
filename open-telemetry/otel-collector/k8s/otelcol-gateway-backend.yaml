@@ -53,21 +53,17 @@ data:
             endpoint: 0.0.0.0:4318
     processors:
       batch: {}
-      resourcedetection:
-        detectors: [ "env", "system" ]
-        override: false
-      attributes/add_cluster:
-        actions:
-          - key: cluster
-            value: "node-01"
-            action: insert
-      k8sattributes:
-
     exporters:
       debug:
         verbosity: detailed
-      otlphttp:
-        endpoint: http://otelcol-gateway.monitoring:4318 # otel-gateway-backend 
+      prometheusremotewrite:
+        endpoint: http://vmsingle-vm-single:8428/api/v1/push
+      otlphttp/logs:
+        endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp
+        tls:
+          insecure: true
+      otlphttp/traces:
+        endpoint: http://tempo.monitoring.svc.cluster.local:4318
         tls:
           insecure: true
     service:
@@ -77,15 +73,16 @@ data:
       pipelines:
         logs/otlp:
           receivers: [ otlp ]
-          processors: [ bactch, resorucedetection, k8sattributes, attribute/add_cluster ]
-          exporters: [ otlphttp ]
+          processors: [  ]
+          exporters: [ otlphttp/logs ]
         traces/otlp:
           receivers: [ otlp ]
-          processors: [ bactch, resorucedetection, k8sattributes, attribute/add_cluster ]
-          exporters: [ otlphttp ]
+          processors: [  ]
+          exporters: [ otlphttp/traces ]
         metrics/otlp:
           receivers: [ otlp ]
-          exporters: [ otlphttp ]
+          processors: [  ]
+          exporters: [ prometheusremotewrite ]
 ---
 apiVersion: v1
 kind: Service
