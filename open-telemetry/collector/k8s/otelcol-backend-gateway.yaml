@@ -57,13 +57,13 @@ data:
       debug:
         verbosity: detailed
       prometheusremotewrite:
-        endpoint: http://vmsingle-vm-single:8428/api/v1/push
+        endpoint: http://vmsingle-vm-single:8428/api/v1/push             # In-Cluster VM Single - Prometheus Format
       otlphttp/logs:
-        endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp
+        endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp  # In-Cluster Loki
         tls:
           insecure: true
       otlphttp/traces:
-        endpoint: http://tempo.monitoring.svc.cluster.local:4318
+        endpoint: http://tempo.monitoring.svc.cluster.local:4318         # In-Cluster Tempo
         tls:
           insecure: true
     service:
@@ -98,3 +98,22 @@ spec:
     targetPort: 4318
   selector:
     app: otelcol-gateway
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otelcol-gateway
+  namespace: monitoring
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: otelcol-gateway.node-02
+    http:
+      paths:
+      - backend:
+          service:
+            name: otelcol-gateway
+            port:
+              number: 4318
+        path: /
+        pathType: Prefix

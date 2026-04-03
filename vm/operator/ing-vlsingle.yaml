@@ -7,13 +7,13 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-  - host: vl-single.node-02
+  - host: vlsingle.node-01
     http:
       paths:
       - backend:
           service:
             name: vlsingle-vl-single
             port:
-              number: 8429
+              number: 9428
         path: /
         pathType: Prefix
