@@ -23,9 +23,13 @@ tempo:
   metricsGenerator:
     enabled: true
     processor: 
-      service_graphs: {}
-      span_metrics: {}
-      local_blocks: {}
+      local_blocks:
+        filter_server_spans: false
+      span_metrics:
+        dimensions:
+          - service_name
+          - operation
+          - status_code
     traces_storage:
       path: "/tmp/traces"
     storage:
@@ -33,7 +37,7 @@ tempo:
         # mimir
         #- url: "http://mimir-gateway.monitoring.svc:80/api/v1/push"
         # victoriametrics
-        - url: "http://vmsingle-vmsingle-victoria-metrics-k8s-stack.monitoring.svc:8428/api/v1/write"
+        - url: "http://vmsingle-vm-single.monitoring.svc:8428/api/v1/write"
   overrides:
     defaults: 
       metrics_generator:
