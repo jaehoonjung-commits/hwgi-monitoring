@@ -1,0 +1,124 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook
+spec:
+  selector:
+    app: webhook
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webhook-recipients-config
+data:
+  recipients.yaml: |
+    recipients:
+      - id: "1000000001"
+        phone_number: "010-1111-1111"
+        email: "user1@example.com"
+        team_name: "backend-team"
+        recipient_group_name: "dev-1"
+        instance_name: "instance-1"
+        alert_receive_level:
+          - critical
+          - warning
+        notification_channels:
+          - gmail
+          - sms
+          - kakao
+
+      - id: "1000000002"
+        phone_number: "010-2222-2222"
+        email: "user2@example.com"
+        team_name: "backend-team"
+        recipient_group_name: "dev-1"
+        instance_name: "instance-1"
+        alert_receive_level:
+          - warning
+        notification_channels:
+          - gmail
+
+
+      - id: "1000000003"
+        phone_number: "010-3333-3333"
+        email: "jaehoon.jung@kubeworks.net"
+        team_name: "infra-team"
+        recipient_group_name: "infra-1"
+        instance_name: "instance-2"
+        alert_receive_level:
+          - warning
+        notification_channels:
+          - gmail
+
+      - id: "1000000004"
+        phone_number: "010-4444-4444"
+        email: "hooney.jung@gmail.com"
+        team_name: "infra-team"
+        recipient_group_name: "infra-1"
+        instance_name: "instance-2"
+        alert_receive_level:
+          - critical
+          - warning
+        notification_channels:
+          - gmail
+
+    routing:
+      default_recipient_group_names: []
+      rules:
+        - instance_pattern: "instance-1"
+          severity: "critical"
+          recipient_group_name: "dev-1"
+
+        - instance_pattern: "instance-1"
+          severity: "warning"
+          recipient_group_name: "dev-1"
+
+        - instance_pattern: "instance-2"
+          severity: "warning"
+          recipient_group_name: "infra-1"
+
+        - instance_pattern: "instance-2"
+          severity: "critical"
+          recipient_group_name: "infra-1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook
+  template:
+    metadata:
+      labels:
+        app: webhook
+    spec:
+      containers:
+        - name: webhook
+          image: webhook:v3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RECIPIENT_CONFIG_PATH
+              value: /app/recipients.yaml
+            - name: GMAIL_USER
+              value: "jaehoon.jung@kubeworks.net"
+            - name: GMAIL_APP_PASSWORD
+              value: "owai wpqi oecn wvnm"
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: recipients-config
+              mountPath: /app/recipients.yaml
+              subPath: recipients.yaml
+              readOnly: true
+      volumes:
+        - name: recipients-config
+          configMap:
+            name: webhook-recipients-config

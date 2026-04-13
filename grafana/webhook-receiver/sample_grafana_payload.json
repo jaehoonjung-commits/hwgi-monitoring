@@ -1,0 +1,20 @@
+{
+  "receiver": "webhook_receiver",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighCPUUsage",
+        "severity": "critical",
+          "instance": "instance-1"
+      },
+      "annotations": {
+        "summary": "CPU usage is high",
+        "description": "CPU usage is above 90% for 5 minutes"
+      },
+      "startsAt": "2026-04-07T10:00:00Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    }
+  ]
+}

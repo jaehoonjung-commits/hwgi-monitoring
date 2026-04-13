@@ -1,0 +1,74 @@
+recipients:
+  - id: "1000000001"
+    phone_number: "010-1111-1111"
+    email: "user1@example.com"
+    team_name: "backend-team"
+    recipient_group_name: "dev-1"
+    instance_name: "instance-1"
+    alert_receive_level:
+      - critical
+      - warning
+    notification_channels:
+      - gmail
+      - sms
+      - kakao
+
+  - id: "1000000002"
+    phone_number: "010-2222-2222"
+    email: "user2@example.com"
+    team_name: "backend-team"
+    recipient_group_name: "dev-1"
+    instance_name: "instance-1"
+    alert_receive_level:
+      - warning
+    notification_channels:
+      - gmail
+
+
+  - id: "1000000003"
+    phone_number: "010-3333-3333"
+    email: "jaehoon.jung@kubeworks.net"
+    team_name: "infra-team"
+    recipient_group_name: "infra-1"
+    instance_name: "instance-2"
+    alert_receive_level:
+      - warning
+    notification_channels:
+      - gmail
+
+  - id: "1000000004"
+    phone_number: "010-4444-4444"
+    email: "hooney.jung@gmail.com"
+    team_name: "infra-team"
+    recipient_group_name: "infra-1"
+    instance_name: "instance-2"
+    alert_receive_level:
+      - critical
+      - warning
+    notification_channels:
+      - gmail
+
+# Routing rules: match by instance, severity, and recipient_group_name
+routing:
+  default_recipient_group_names: []
+  rules:
+    # Rule 1: instance-1에서 critical 알림 → dev-1 그룹만 수신
+    - instance_pattern: "instance-1"
+      severity: "critical"
+      recipient_group_name: "dev-1"
+
+    # Rule 2: instance-1에서 warning 알림 → dev-1 그룹만 수신
+    - instance_pattern: "instance-1"
+      severity: "warning"
+      recipient_group_name: "dev-1"
+
+    # Rule 3: instance-2에서 warning 알림 → infra-1 그룹만 수신
+    - instance_pattern: "instance-2"
+      severity: "warning"
+      recipient_group_name: "infra-1"
+
+    # Rule 4: instance-2에서 critical 알림 → infra-1 그룹만 수신
+    - instance_pattern: "instance-2"
+      severity: "critical"
+      recipient_group_name: "infra-1"
+

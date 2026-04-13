@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webhook
+  namespace: monitoring
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: webhook.node-01
+    http:
+      paths:
+      - backend:
+          service:
+            name: webhook
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+status:
+  loadBalancer:
+    ingress:
+    - ip: 192.168.100.1
+
