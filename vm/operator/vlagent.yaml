@@ -1,9 +1,0 @@
-apiVersion: operator.victoriametrics.com/v1
-kind: VLAgent
-metadata:
-  name: k8s-log
-spec:
-  k8sCollector:
-    enabled: true
-  remoteWrite:
-    - url: "http://vlsingle-vl-single.monitoring:9428/internal/insert"

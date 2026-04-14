@@ -1,3 +1,0 @@
-- cert-manager 설치
-- operator 설치
-- java-instrument 생성
