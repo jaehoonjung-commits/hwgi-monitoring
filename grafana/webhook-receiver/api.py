@@ -98,22 +98,24 @@ async def receive_grafana_webhook(request: Request) -> dict:
         # Add recipients to alert labels for logging/debugging
         labels["recipients"] = resolved_recipients
         
-        # Send notifications to each recipient
+        # Send notifications to each recipient and collect results
+        alert_delivery_results = []
         for recipient in resolved_recipients:
-            delivery_results.extend(await send_notification(recipient=recipient, alert=alert))
-
-        # Log alert details
-        logger.info("--- alert #%d ---", idx)
-        logger.info("status: %s", alert.get("status"))
-        logger.info("name: %s", labels.get("alertname"))
-        logger.info("severity: %s", severity)
-        logger.info("alert_group: %s", alert_group)
-        logger.info("instance: %s", instance)
-        logger.info("recipients: %s", labels.get("recipients"))
-        logger.info("summary: %s", annotations.get("summary"))
-        logger.info("description: %s", annotations.get("description"))
-        logger.info("startsAt: %s", alert.get("startsAt"))
-        logger.info("endsAt: %s", alert.get("endsAt"))
+            alert_delivery_results.extend(await send_notification(recipient=recipient, alert=alert))
+        
+        delivery_results.extend(alert_delivery_results)
+        
+        # Log alert details for each delivery result
+        for delivery_idx, delivery_result in enumerate(alert_delivery_results, start=1):
+            logger.info("--- alert #%d-%d --- %s, %s, %s, %s, %s, %s", 
+                       idx,
+                       delivery_idx,
+                       severity,
+                       labels.get("alertname"),
+                       alert_group,
+                       delivery_result.get("recipient_id", ""),
+                       delivery_result.get("channel", ""),
+                       delivery_result.get("status"))
 
     logger.info("=== End ===")
 
@@ -132,14 +134,18 @@ async def receive_ums_request(request: Request) -> dict:
     header = payload.get("header")
     body = payload.get("payload")
 
+    def _normalize_header_value(key: str) -> str:
+        value = header.get(key) if isinstance(header, dict) else ""
+        return str(value) if value is not None else ""
+
     response_header = {
-        "ifGlobalNo": header.get("ifGlobalNo") if isinstance(header, dict) else "",
-        "chnlSysCd": header.get("chnlSysCd") if isinstance(header, dict) else "",
-        "ifOrgCd": header.get("ifOrgCd") if isinstance(header, dict) else "",
-        "applCd": header.get("applCd") if isinstance(header, dict) else "",
-        "ifKindCd": header.get("ifKindCd") if isinstance(header, dict) else "",
-        "ifTxCd": header.get("ifTxCd") if isinstance(header, dict) else "",
-        "sftno": header.get("sftno") if isinstance(header, dict) else "",
+        "ifGlobalNo": _normalize_header_value("ifGlobalNo"),
+        "chnlSysCd": _normalize_header_value("chnlSysCd"),
+        "ifOrgCd": _normalize_header_value("ifOrgCd"),
+        "applCd": _normalize_header_value("applCd"),
+        "ifKindCd": _normalize_header_value("ifKindCd"),
+        "ifTxCd": _normalize_header_value("ifTxCd"),
+        "sftno": _normalize_header_value("sftno"),
     }
 
     if not isinstance(header, dict) or not isinstance(body, dict):
@@ -174,7 +180,7 @@ async def receive_ums_request(request: Request) -> dict:
         }
 
     logger.info("=== UMS Test Request Received ===")
-    logger.info("ifGlobalNo: %s", header.get("inGlobalNo"))
+    logger.info("ifGlobalNo: %s", header.get("ifGlobalNo"))
     logger.info("ifOrgCd: %s", header.get("ifOrgCd"))
     logger.info("applCd: %s", header.get("applCd"))
     logger.info("ifKindCd: %s", header.get("ifKindCd"))

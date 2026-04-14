@@ -9,9 +9,7 @@ recipients:
       - critical
       - warning
     notification_channels:
-      - gmail
       - kakao
-      - file
 
   - id: "1000000002"
     phone_number: "010-2222-2222"
@@ -23,9 +21,7 @@ recipients:
       - warning
     notification_channels:
       - gmail
-      - file  
-      - kakao
-
+      - file
 
   - id: "1000000003"
     phone_number: "010-3333-3333"
@@ -50,4 +46,5 @@ recipients:
       - warning
     notification_channels:
       - gmail
+      - file
 

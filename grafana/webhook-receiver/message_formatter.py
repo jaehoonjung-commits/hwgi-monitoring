@@ -10,9 +10,6 @@ from models import AlertData, RecipientData
 _sequence_counter = 0
 
 def build_alert_summary(recipient: RecipientData, alert: AlertData) -> str:
-
-
-def build_alert_summary(recipient: RecipientData, alert: AlertData) -> str:
     labels = alert.get("labels", {})
     annotations = alert.get("annotations", {})
     lines = [

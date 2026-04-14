@@ -10,37 +10,9 @@ Content-Type: application/json
       "status": "firing",
       "labels": {
         "alertname": "HighCPUUsage",
-        "severity": "Warning",
-        "alert_group": "infra-1",
-        "instance": "instance-2"
-      },
-      "annotations": {
-        "summary": "CPU usage is high",
-        "description": "CPU usage is above 90% for 5 minutes"
-      },
-      "startsAt": "2026-04-07T10:00:00Z",
-      "endsAt": "0001-01-01T00:00:00Z"
-    }
-  ]
-}
-
-
-###
-
-POST http://localhost:8001/webhook/grafana
-Content-Type: application/json
-
-{
-  "receiver": "webhook_receiver",
-  "status": "firing",
-  "alerts": [
-    {
-      "status": "firing",
-      "labels": {
-        "alertname": "HighCPUUsage",
-        "severity": "Warning",
+        "severity": "warning",
         "alert_group": "dev-1",
-        "instance": "instance-1"
+        "instance": "instance-2"
       },
       "annotations": {
         "summary": "CPU usage is high",
