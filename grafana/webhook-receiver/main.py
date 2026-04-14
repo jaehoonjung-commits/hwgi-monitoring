@@ -35,6 +35,9 @@ app = FastAPI(
     title="Grafana Webhook Receiver",
     description="Receives Grafana alert webhooks and routes to notification channels",
     version="1.0.0",
+    docs_url="/swagger",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 # Add CORS middleware to allow fetch requests from the UI

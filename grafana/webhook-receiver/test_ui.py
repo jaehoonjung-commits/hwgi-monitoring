@@ -18,7 +18,7 @@ def render_test_page() -> str:
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -64,7 +64,7 @@ def render_test_page() -> str:
             color: #333;
             margin-bottom: 20px;
             font-size: 18px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #4caf50;
             padding-bottom: 10px;
         }
         
@@ -100,8 +100,8 @@ def render_test_page() -> str:
         select:focus,
         textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #4caf50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
         
         textarea {
@@ -129,16 +129,16 @@ def render_test_page() -> str:
         }
         
         .btn-primary {
-            background: #667eea;
+            background: #4caf50;
             color: white;
             flex: 1;
             min-width: 150px;
         }
         
         .btn-primary:hover {
-            background: #5568d3;
+            background: #388e3c;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
         }
         
         .btn-secondary {
@@ -280,8 +280,8 @@ def render_test_page() -> str:
         }
         
         .tab-btn.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: #4caf50;
+            border-bottom-color: #4caf50;
         }
         
         .tab-content {
@@ -309,8 +309,8 @@ def render_test_page() -> str:
         }
         
         .info-box {
-            background: #e6f2ff;
-            border-left: 4px solid #667eea;
+            background: #f1f8e9;
+            border-left: 4px solid #4caf50;
             padding: 12px;
             border-radius: 4px;
             margin-bottom: 15px;
@@ -443,8 +443,8 @@ def render_test_page() -> str:
                 
                 <div class="curl-container">
                     <div class="copy-button">
-                        <button class="btn-copy" onclick="copyCurl()">📋 Copy</button>
-                        <button class="btn-execute" id="execute-btn" onclick="executeCurl()">▶ Execute</button>
+                        <button type="button" class="btn-copy" onclick="copyCurl()">📋 Copy</button>
+                        <button type="button" class="btn-execute" id="execute-btn" onclick="executeCurl()">▶ Execute</button>
                     </div>
                     <div id="curl-output" class="curl-command">Ready to generate...</div>
                     <div id="success-message" class="success-message">✓ Copied to clipboard!</div>
@@ -596,15 +596,49 @@ def render_test_page() -> str:
         
         function copyCurl() {
             const curlText = document.getElementById('curl-output').textContent;
-            navigator.clipboard.writeText(curlText).then(() => {
-                const msg = document.getElementById('success-message');
-                msg.style.display = 'block';
-                setTimeout(() => {
-                    msg.style.display = 'none';
-                }, 2000);
-            }).catch(err => {
+            const msg = document.getElementById('success-message');
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(curlText)
+                    .then(() => {
+                        msg.style.display = 'block';
+                        setTimeout(() => {
+                            msg.style.display = 'none';
+                        }, 2000);
+                    })
+                    .catch(() => {
+                        fallbackCopyText(curlText, msg);
+                    });
+            } else {
+                fallbackCopyText(curlText, msg);
+            }
+        }
+
+        function fallbackCopyText(text, msgElement) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    msgElement.style.display = 'block';
+                    setTimeout(() => {
+                        msgElement.style.display = 'none';
+                    }, 2000);
+                } else {
+                    alert('Failed to copy. Please select and copy manually.');
+                }
+            } catch (err) {
                 alert('Failed to copy: ' + err);
-            });
+            } finally {
+                document.body.removeChild(textarea);
+            }
         }
         
         function clearGrafanaForm() {
