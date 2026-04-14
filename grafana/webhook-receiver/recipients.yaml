@@ -10,8 +10,8 @@ recipients:
       - warning
     notification_channels:
       - gmail
-      - sms
       - kakao
+      - file
 
   - id: "1000000002"
     phone_number: "010-2222-2222"
@@ -23,6 +23,8 @@ recipients:
       - warning
     notification_channels:
       - gmail
+      - file  
+      - kakao
 
 
   - id: "1000000003"
@@ -35,6 +37,7 @@ recipients:
       - warning
     notification_channels:
       - gmail
+      - kakao
 
   - id: "1000000004"
     phone_number: "010-4444-4444"
@@ -47,28 +50,4 @@ recipients:
       - warning
     notification_channels:
       - gmail
-
-# Routing rules: match by instance, severity, and recipient_group_name
-routing:
-  default_recipient_group_names: []
-  rules:
-    # Rule 1: instance-1에서 critical 알림 → dev-1 그룹만 수신
-    - instance_pattern: "instance-1"
-      severity: "critical"
-      recipient_group_name: "dev-1"
-
-    # Rule 2: instance-1에서 warning 알림 → dev-1 그룹만 수신
-    - instance_pattern: "instance-1"
-      severity: "warning"
-      recipient_group_name: "dev-1"
-
-    # Rule 3: instance-2에서 warning 알림 → infra-1 그룹만 수신
-    - instance_pattern: "instance-2"
-      severity: "warning"
-      recipient_group_name: "infra-1"
-
-    # Rule 4: instance-2에서 critical 알림 → infra-1 그룹만 수신
-    - instance_pattern: "instance-2"
-      severity: "critical"
-      recipient_group_name: "infra-1"
 

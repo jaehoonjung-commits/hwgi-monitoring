@@ -1,27 +1,88 @@
-GET https://google.com
+
+POST http://localhost:8000/webhook/grafana
+Content-Type: application/json
+
+{
+  "receiver": "webhook_receiver",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighCPUUsage",
+        "severity": "Warning",
+        "recipient_group_name": "infra-1",
+        "instance": "instance-2"
+      },
+      "annotations": {
+        "summary": "CPU usage is high",
+        "description": "CPU usage is above 90% for 5 minutes"
+      },
+      "startsAt": "2026-04-07T10:00:00Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    }
+  ]
+}
+
 
 ###
 
-curl -X POST http://webhook.node-01/webhook/grafana \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "receiver": "webhook_receiver",
-    "status": "firing",
-    "alerts": [
+POST http://localhost:8001/webhook/grafana
+Content-Type: application/json
+
+{
+  "receiver": "webhook_receiver",
+  "status": "firing",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "HighCPUUsage",
+        "severity": "Warning",
+        "recipient_group_name": "dev-1",
+        "instance": "instance-1"
+      },
+      "annotations": {
+        "summary": "CPU usage is high",
+        "description": "CPU usage is above 90% for 5 minutes"
+      },
+      "startsAt": "2026-04-07T10:00:00Z",
+      "endsAt": "0001-01-01T00:00:00Z"
+    }
+  ]
+}
+
+
+###
+
+POST http://localhost:8000/hwgi/ums/UMSMEMMA020010000
+Content-Type: application/json
+
+{
+  "header" : {
+    "ifGlobalNo": "20260414082425123111AAAA123457",
+    "chnlSysCd": "AAA",
+    "ifOrgCd": "UMS",
+    "applCd": "GRFN",
+    "ifKindCd": "0100",
+    "ifTxCd": "10000",
+    "sftno": "8094310",
+    "respCd": "",
+    "respMsg": ""
+  },
+  "payload": {
+    "cnt": 1,
+    "request": [
       {
-        "status": "firing",
-        "labels": {
-          "alertname": "HighCPUUsage",
-          "severity": "critical",
-          "recipient_group_name": "infra-1",
-          "instance": "instance-2"
-        },
-        "annotations": {
-          "summary": "CPU usage is high",
-          "description": "CPU usage is above 90% for 5 minutes"
-        },
-        "startsAt": "2026-04-07T10:00:00Z",
-        "endsAt": "0001-01-01T00:00:00Z"
+        "ecardNo": 3402,
+        "channel": "A",
+        "tmplType": "J",
+        "receivcerNm": "정재훈",
+        "receiver": "01020083890",
+        "senderNm": "한화손해보험",
+        "reqUserId": "8094310",
+        "jonmun": "@s@|f|6|그라파나|자원사용량경고|DEVOPS 클러스터 1번 노드의 사용량이 90% 이상입니다|08|31|22"
       }
     ]
-  }'
+  }
+}

@@ -1,49 +1,28 @@
 """
-Notification channel implementations (Gmail, SMS, Kakao).
-Each channel has different API/SMTP requirements.
+Notification channel implementations (Gmail, Kakao via UMS, File).
+Each channel has different delivery requirements.
 """
 
 import json
+import inspect
 import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from urllib import error, request as urllib_request
+from pathlib import Path
+
+import httpx
 
 import config
+from message_formatter import (
+    build_alert_summary,
+    build_file_record,
+    build_gmail_subject,
+    build_ums_kakao_payload,
+)
 from models import RecipientData, AlertData, NotificationResult
 
 logger = logging.getLogger("grafana_webhook_receiver")
-
-
-def _build_alert_summary(recipient: RecipientData, alert: AlertData) -> str:
-    """
-    Build formatted alert summary for email body.
-    
-    Args:
-        recipient: Recipient data.
-        alert: Alert data.
-        
-    Returns:
-        Formatted multi-line text.
-    """
-    labels = alert.get("labels", {})
-    annotations = alert.get("annotations", {})
-    lines = [
-        f"Alert Name : {labels.get('alertname', '-')}",
-        f"Severity   : {labels.get('severity', '-')}",
-        f"Instance   : {labels.get('instance', '-')}",
-        f"Status     : {alert.get('status', '-')}",
-        f"Summary    : {annotations.get('summary', '-')}",
-        f"Description: {annotations.get('description', '-')}",
-        f"Starts At  : {alert.get('startsAt', '-')}",
-        f"Ends At    : {alert.get('endsAt', '-')}",
-        "",
-        f"Team       : {recipient.get('team_name', '-')}",
-        f"Group      : {recipient.get('recipient_group_name', '-')}",
-        f"Recipient  : {recipient.get('id', '-')}",
-    ]
-    return "\n".join(lines)
 
 
 def send_gmail(recipient: RecipientData, alert: AlertData) -> NotificationResult:
@@ -75,11 +54,8 @@ def send_gmail(recipient: RecipientData, alert: AlertData) -> NotificationResult
             "reason": "no email address",
         }
 
-    labels = alert.get("labels", {})
-    severity = labels.get("severity", "").upper()
-    alertname = labels.get("alertname", "Alert")
-    subject = f"[Grafana {severity}] {alertname} on {labels.get('instance', '-')}"
-    body = _build_alert_summary(recipient, alert)
+    subject = build_gmail_subject(alert)
+    body = build_alert_summary(recipient, alert)
 
     msg = MIMEMultipart()
     msg["From"] = config.GMAIL_USER
@@ -105,99 +81,32 @@ def send_gmail(recipient: RecipientData, alert: AlertData) -> NotificationResult
         return {"recipient_id": recipient_id, "channel": "gmail", "status": "failed"}
 
 
-def send_sms(recipient: RecipientData, alert: AlertData) -> NotificationResult:
+
+async def send_kakao(recipient: RecipientData, alert: AlertData) -> NotificationResult:
     """
-    Send alert via SMS API (provider-agnostic HTTP).
-    
+    Send Kakao notification through UMS endpoint.
+
     Args:
         recipient: Recipient with phone_number field.
         alert: Alert data.
-        
+
     Returns:
-        Result dict with channel, status, and optional HTTP status.
+        Result dict with channel, status, and optional HTTP/UMS response code.
     """
-    recipient_id = recipient.get("id", "")
-    phone = recipient.get("phone_number", "")
+    recipient_id = str(recipient.get("id", ""))
+    phone = str(recipient.get("phone_number", ""))
 
-    # Dry-run if credentials not configured
-    if not config.SMS_API_URL or not config.SMS_API_KEY or not config.SMS_SENDER_NUMBER:
-        logger.info("[DRY-RUN] sms -> id=%s to=%s", recipient_id, phone)
-        return {"recipient_id": recipient_id, "channel": "sms", "status": "dry-run"}
-
-    # Skip if no phone number
-    if not phone:
-        logger.warning("sms: no phone number for recipient %s, skipping", recipient_id)
+    if not config.UMS_API_URL:
+        logger.info("[DRY-RUN] kakao(ums) -> id=%s to=%s", recipient_id, phone)
         return {
             "recipient_id": recipient_id,
-            "channel": "sms",
-            "status": "skipped",
-            "reason": "no phone number",
+            "channel": "kakao",
+            "status": "dry-run",
+            "reason": "UMS_API_URL not configured",
         }
 
-    labels = alert.get("labels", {})
-    annotations = alert.get("annotations", {})
-    text = (
-        f"[Grafana {labels.get('severity', '').upper()}] "
-        f"{labels.get('alertname', 'Alert')} / {labels.get('instance', '-')}\n"
-        f"{annotations.get('summary', '-')}"
-    )
-    payload = json.dumps({
-        "to": phone,
-        "from": config.SMS_SENDER_NUMBER,
-        "text": text,
-    }).encode("utf-8")
-
-    req = urllib_request.Request(
-        config.SMS_API_URL,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.SMS_API_KEY}",
-        },
-        data=payload,
-    )
-    try:
-        with urllib_request.urlopen(req, timeout=5) as resp:
-            code = str(resp.getcode())
-        logger.info("sms sent -> id=%s to=%s http=%s", recipient_id, phone, code)
-        return {
-            "recipient_id": recipient_id,
-            "channel": "sms",
-            "status": "sent",
-            "http_status": code,
-        }
-    except error.URLError as exc:
-        logger.warning("sms failed for recipient %s: %s", recipient_id, exc)
-        return {"recipient_id": recipient_id, "channel": "sms", "status": "failed"}
-
-
-def send_kakao(recipient: RecipientData, alert: AlertData) -> NotificationResult:
-    """
-    Send alert via Kakao Alimtalk API.
-    
-    Args:
-        recipient: Recipient with phone_number field.
-        alert: Alert data.
-        
-    Returns:
-        Result dict with channel, status, and optional HTTP status.
-    """
-    recipient_id = recipient.get("id", "")
-    phone = recipient.get("phone_number", "")
-
-    # Dry-run if credentials not configured
-    if (
-        not config.KAKAO_API_URL
-        or not config.KAKAO_API_KEY
-        or not config.KAKAO_SENDER_KEY
-        or not config.KAKAO_TEMPLATE_CODE
-    ):
-        logger.info("[DRY-RUN] kakao -> id=%s to=%s", recipient_id, phone)
-        return {"recipient_id": recipient_id, "channel": "kakao", "status": "dry-run"}
-
-    # Skip if no phone number
     if not phone:
-        logger.warning("kakao: no phone number for recipient %s, skipping", recipient_id)
+        logger.warning("kakao(ums): no phone number for recipient %s, skipping", recipient_id)
         return {
             "recipient_id": recipient_id,
             "channel": "kakao",
@@ -205,58 +114,107 @@ def send_kakao(recipient: RecipientData, alert: AlertData) -> NotificationResult
             "reason": "no phone number",
         }
 
-    labels = alert.get("labels", {})
-    annotations = alert.get("annotations", {})
-    payload = json.dumps({
-        "senderKey": config.KAKAO_SENDER_KEY,
-        "templateCode": config.KAKAO_TEMPLATE_CODE,
-        "recipientList": [
-            {
-                "recipientNo": phone,
-                "templateParameter": {
-                    "alertname": labels.get("alertname", "-"),
-                    "severity": labels.get("severity", "-"),
-                    "instance": labels.get("instance", "-"),
-                    "status": alert.get("status", "-"),
-                    "summary": annotations.get("summary", "-"),
-                },
+    request_payload = build_ums_kakao_payload(recipient=recipient, alert=alert)
+
+    headers = {"Content-Type": "application/json"}
+    if config.UMS_API_KEY:
+        headers["Authorization"] = f"Bearer {config.UMS_API_KEY}"
+
+    try:
+        async with httpx.AsyncClient(timeout=config.UMS_TIMEOUT_SEC) as client:
+            resp = await client.post(
+                config.UMS_API_URL,
+                headers=headers,
+                json=request_payload,
+            )
+
+        http_status = str(resp.status_code)
+        raw_response = resp.text
+
+        ums_resp_cd = ""
+        try:
+            response_json = json.loads(raw_response) if raw_response else {}
+            ums_resp_cd = str(response_json.get("payload", {}).get("reCode", ""))
+        except json.JSONDecodeError:
+            logger.warning("kakao(ums): non-json response for recipient %s", recipient_id)
+
+        logger.info(
+            "kakao(ums) sent -> id=%s to=%s http=%s reCode=%s",
+            recipient_id,
+            phone,
+            http_status,
+            ums_resp_cd,
+        )
+        if resp.status_code >= 400:
+            return {
+                "recipient_id": recipient_id,
+                "channel": "kakao",
+                "status": "failed",
+                "http_status": http_status,
+                "reason": f"ums http error: {resp.status_code}",
             }
-        ],
-    }).encode("utf-8")
 
-    req = urllib_request.Request(
-        config.KAKAO_API_URL,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.KAKAO_API_KEY}",
-        },
-        data=payload,
-    )
-    try:
-        with urllib_request.urlopen(req, timeout=5) as resp:
-            code = str(resp.getcode())
-        logger.info("kakao sent -> id=%s to=%s http=%s", recipient_id, phone, code)
         return {
             "recipient_id": recipient_id,
             "channel": "kakao",
             "status": "sent",
-            "http_status": code,
+            "http_status": http_status,
+            "re_code": ums_resp_cd,
         }
-    except error.URLError as exc:
-        logger.warning("kakao failed for recipient %s: %s", recipient_id, exc)
-        return {"recipient_id": recipient_id, "channel": "kakao", "status": "failed"}
+    except (httpx.TimeoutException, httpx.RequestError, TimeoutError, OSError) as exc:
+        logger.warning("kakao(ums) failed for recipient %s: %s", recipient_id, exc)
+        return {
+            "recipient_id": recipient_id,
+            "channel": "kakao",
+            "status": "failed",
+            "reason": f"ums request failed: {exc}",
+        }
+    except Exception as exc:
+        logger.warning("kakao(ums) failed for recipient %s: %s", recipient_id, exc)
+        return {
+            "recipient_id": recipient_id,
+            "channel": "kakao",
+            "status": "failed",
+            "reason": f"ums request failed: {exc}",
+        }
+
+
+def send_file(recipient: RecipientData, alert: AlertData) -> NotificationResult:
+    """Append alert delivery details to a local file."""
+    recipient_id = str(recipient.get("id", ""))
+    output_path = Path(config.FILE_OUTPUT_PATH)
+    record = build_file_record(recipient, alert)
+
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with output_path.open("a", encoding="utf-8") as file:
+            file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        logger.info("file written -> id=%s path=%s", recipient_id, output_path)
+        return {
+            "recipient_id": recipient_id,
+            "channel": "file",
+            "status": "sent",
+            "path": str(output_path),
+        }
+    except OSError as exc:
+        logger.warning("file write failed for recipient %s: %s", recipient_id, exc)
+        return {
+            "recipient_id": recipient_id,
+            "channel": "file",
+            "status": "failed",
+            "reason": "file write failed",
+        }
 
 
 # Channel dispatcher
 _CHANNEL_HANDLERS = {
+    "file": send_file,
     "gmail": send_gmail,
-    "sms": send_sms,
     "kakao": send_kakao,
 }
 
 
-def send_notification(
+async def send_notification(
     recipient: RecipientData,
     alert: AlertData,
 ) -> list[NotificationResult]:
@@ -288,6 +246,23 @@ def send_notification(
                 "reason": "unknown channel",
             })
             continue
-        results.append(handler(recipient, alert))
+        try:
+            result = handler(recipient, alert)
+            if inspect.isawaitable(result):
+                result = await result
+            results.append(result)
+        except Exception as exc:
+            logger.exception(
+                "notification channel '%s' failed for recipient %s: %s",
+                channel,
+                recipient.get("id", ""),
+                exc,
+            )
+            results.append({
+                "recipient_id": recipient.get("id", ""),
+                "channel": channel,
+                "status": "failed",
+                "reason": "channel handler exception",
+            })
     
     return results

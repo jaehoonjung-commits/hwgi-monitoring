@@ -31,6 +31,7 @@ data:
           - gmail
           - sms
           - kakao
+          - file
 
       - id: "1000000002"
         phone_number: "010-2222-2222"
@@ -42,6 +43,7 @@ data:
           - warning
         notification_channels:
           - gmail
+          - file
 
 
       - id: "1000000003"
@@ -66,25 +68,6 @@ data:
           - warning
         notification_channels:
           - gmail
-
-    routing:
-      default_recipient_group_names: []
-      rules:
-        - instance_pattern: "instance-1"
-          severity: "critical"
-          recipient_group_name: "dev-1"
-
-        - instance_pattern: "instance-1"
-          severity: "warning"
-          recipient_group_name: "dev-1"
-
-        - instance_pattern: "instance-2"
-          severity: "warning"
-          recipient_group_name: "infra-1"
-
-        - instance_pattern: "instance-2"
-          severity: "critical"
-          recipient_group_name: "infra-1"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -102,11 +85,13 @@ spec:
     spec:
       containers:
         - name: webhook
-          image: webhook:v3
+          image: flytux/grafana-webhook-receiver 
           imagePullPolicy: IfNotPresent
           env:
             - name: RECIPIENT_CONFIG_PATH
-              value: /app/recipients.yaml
+              value: /config/recipients.yaml
+            - name: FILE_OUTPUT_PATH
+              value: /tmp/notification_results.log
             - name: GMAIL_USER
               value: "jaehoon.jung@kubeworks.net"
             - name: GMAIL_APP_PASSWORD
@@ -115,7 +100,7 @@ spec:
             - containerPort: 8000
           volumeMounts:
             - name: recipients-config
-              mountPath: /app/recipients.yaml
+              mountPath: /config/recipients.yaml
               subPath: recipients.yaml
               readOnly: true
       volumes:

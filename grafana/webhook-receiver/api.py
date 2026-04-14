@@ -8,8 +8,11 @@ and delegate to business logic modules (recipients, channels).
 import logging
 
 from fastapi import Request
+from fastapi.responses import HTMLResponse
 
+from config import RECIPIENT_CONFIG_PATH
 from recipients import load_recipient_config, resolve_recipients
+from recipients_view import render_recipients_page
 from channels import send_notification
 from models import ConfigData
 
@@ -28,6 +31,16 @@ async def healthcheck() -> dict[str, str]:
         "service": "Grafana Webhook Receiver",
         "message": "Use POST /webhook/grafana to send alerts",
     }
+
+
+async def view_recipients() -> HTMLResponse:
+    """Render recipient configuration as an HTML page for browser viewing."""
+    config_data: ConfigData = load_recipient_config()
+    html = render_recipients_page(
+        config_path=RECIPIENT_CONFIG_PATH,
+        recipients_config=config_data.get("recipients", []),
+    )
+    return HTMLResponse(content=html)
 
 
 async def receive_grafana_webhook(request: Request) -> dict:
@@ -77,7 +90,6 @@ async def receive_grafana_webhook(request: Request) -> dict:
         
         # Resolve recipients for this alert
         resolved_recipients = resolve_recipients(
-            instance=instance,
             severity=severity,
             recipient_group_name=recipient_group_name,
             config=config_data,
@@ -88,7 +100,7 @@ async def receive_grafana_webhook(request: Request) -> dict:
         
         # Send notifications to each recipient
         for recipient in resolved_recipients:
-            delivery_results.extend(send_notification(recipient=recipient, alert=alert))
+            delivery_results.extend(await send_notification(recipient=recipient, alert=alert))
 
         # Log alert details
         logger.info("--- alert #%d ---", idx)
@@ -110,4 +122,93 @@ async def receive_grafana_webhook(request: Request) -> dict:
         "message": "Webhook received",
         "alerts_count": len(alerts),
         "delivery_results": delivery_results,
+    }
+
+
+async def receive_ums_request(request: Request) -> dict:
+    """Receive and validate UMS test payload."""
+    payload = await request.json()
+
+    header = payload.get("header")
+    body = payload.get("payload")
+
+    response_header = {
+        "ifGlobalNo": header.get("ifGlobalNo") if isinstance(header, dict) else "",
+        "chnlSysCd": header.get("chnlSysCd") if isinstance(header, dict) else "",
+        "ifOrgCd": header.get("ifOrgCd") if isinstance(header, dict) else "",
+        "applCd": header.get("applCd") if isinstance(header, dict) else "",
+        "ifKindCd": header.get("ifKindCd") if isinstance(header, dict) else "",
+        "ifTxCd": header.get("ifTxCd") if isinstance(header, dict) else "",
+        "sftno": header.get("sftno") if isinstance(header, dict) else "",
+    }
+
+    if not isinstance(header, dict) or not isinstance(body, dict):
+        return {
+            "ok": False,
+            "message": "Invalid payload: 'header' and 'payload' are required objects",
+            "header": {
+                **response_header,
+                "respCd": "9998",
+                "respMsg": "INVALID_HEADER_OR_PAYLOAD",
+            },
+            "payload": {
+                "reCode": "9998",
+                "reMsg": "INVALID_HEADER_OR_PAYLOAD",
+            },
+        }
+
+    request_items = body.get("request")
+    if not isinstance(request_items, list):
+        return {
+            "ok": False,
+            "message": "Invalid payload: 'payload.request' must be a list",
+            "header": {
+                **response_header,
+                "respCd": "9997",
+                "respMsg": "INVALID_REQUEST_LIST",
+            },
+            "payload": {
+                "reCode": "9997",
+                "reMsg": "INVALID_REQUEST_LIST",
+            },
+        }
+
+    logger.info("=== UMS Test Request Received ===")
+    logger.info("ifGlobalNo: %s", header.get("inGlobalNo"))
+    logger.info("ifOrgCd: %s", header.get("ifOrgCd"))
+    logger.info("applCd: %s", header.get("applCd"))
+    logger.info("ifKindCd: %s", header.get("ifKindCd"))
+    logger.info("ifTxCd: %s", header.get("ifTxCd"))
+    logger.info("request_count: %d", len(request_items))
+
+    for idx, item in enumerate(request_items, start=1):
+        if not isinstance(item, dict):
+            logger.warning("request #%d is not an object", idx)
+            continue
+
+        logger.info("--- ums request #%d ---", idx)
+        logger.info("ecardNo: %s", item.get("ecardNo"))
+        logger.info("channel: %s", item.get("channel"))
+        logger.info("tmplType: %s", item.get("tmplType"))
+        logger.info("receiverName(receivcerNm): %s", item.get("receivcerNm"))
+        logger.info("receiver: %s", item.get("receiver"))
+        logger.info("senderNm: %s", item.get("senderNm"))
+        logger.info("reqUserId: %s", item.get("reqUserId"))
+        logger.info("jonmun: %s", item.get("jonmun"))
+
+    logger.info("=== End UMS Test Request ===")
+
+    return {
+        "ok": True,
+        "message": "UMS test request received",
+        "request_count": len(request_items),
+        "header": {
+            **response_header,
+            "respCd": "0000",
+            "respMsg": "SUCCESS",
+        },
+        "payload": {
+            "reCode": "0000",
+            "reMsg": "SUCCESS",
+        },
     }
