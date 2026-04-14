@@ -11,7 +11,7 @@ Content-Type: application/json
       "labels": {
         "alertname": "HighCPUUsage",
         "severity": "Warning",
-        "recipient_group_name": "infra-1",
+        "alert_group": "infra-1",
         "instance": "instance-2"
       },
       "annotations": {
@@ -39,7 +39,7 @@ Content-Type: application/json
       "labels": {
         "alertname": "HighCPUUsage",
         "severity": "Warning",
-        "recipient_group_name": "dev-1",
+        "alert_group": "dev-1",
         "instance": "instance-1"
       },
       "annotations": {

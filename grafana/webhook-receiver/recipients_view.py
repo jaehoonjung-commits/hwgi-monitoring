@@ -32,7 +32,7 @@ def render_recipients_page(config_path: str, recipients_config: object) -> str:
             "<tr>"
             f"<td>{escape(str(recipient.get('id', '')))}</td>"
             f"<td>{escape(str(recipient.get('team_name', '')))}</td>"
-            f"<td>{escape(str(recipient.get('recipient_group_name', '')))}</td>"
+            f"<td>{escape(str(recipient.get('alert_group', '')))}</td>"
             f"<td>{escape(str(recipient.get('instance_name', '')))}</td>"
             f"<td>{escape(str(recipient.get('email', '')))}</td>"
             f"<td>{escape(str(recipient.get('phone_number', '')))}</td>"

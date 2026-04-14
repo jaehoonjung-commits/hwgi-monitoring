@@ -86,12 +86,12 @@ async def receive_grafana_webhook(request: Request) -> dict:
 
         instance = str(labels.get("instance", ""))
         severity = str(labels.get("severity", ""))
-        recipient_group_name = str(labels.get("recipient_group_name", ""))
+        alert_group = str(labels.get("alert_group", ""))
         
         # Resolve recipients for this alert
         resolved_recipients = resolve_recipients(
             severity=severity,
-            recipient_group_name=recipient_group_name,
+            alert_group=alert_group,
             config=config_data,
         )
         
@@ -107,7 +107,7 @@ async def receive_grafana_webhook(request: Request) -> dict:
         logger.info("status: %s", alert.get("status"))
         logger.info("name: %s", labels.get("alertname"))
         logger.info("severity: %s", severity)
-        logger.info("recipient_group_name: %s", recipient_group_name)
+        logger.info("alert_group: %s", alert_group)
         logger.info("instance: %s", instance)
         logger.info("recipients: %s", labels.get("recipients"))
         logger.info("summary: %s", annotations.get("summary"))
