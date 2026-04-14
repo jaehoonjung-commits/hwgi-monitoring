@@ -45,7 +45,7 @@ def normalize_recipient(recipient: RecipientData) -> RecipientData:
         "phone_number": str(recipient.get("phone_number", "")),
         "email": str(recipient.get("email", "")),
         "team_name": str(recipient.get("team_name", "")),
-        "recipient_group_name": str(recipient.get("recipient_group_name", "")),
+        "alert_group": str(recipient.get("alert_group", "")),
         "instance_name": str(recipient.get("instance_name", "")),
         "alert_receive_level": _normalize_string_list(
             recipient.get("alert_receive_level", "info")
@@ -85,20 +85,20 @@ def _build_recipient_lookup(recipients_config: object) -> dict[str, RecipientDat
 def _matches_recipient(
     recipient: RecipientData,
     severity: str,
-    recipient_group_name: str,
+    alert_group: str,
 ) -> bool:
     if not _can_receive_alert(recipient["alert_receive_level"], severity):
         return False
 
     return _is_same_group(
-        recipient.get("recipient_group_name", ""),
-        recipient_group_name,
+        recipient.get("alert_group", ""),
+        alert_group,
     )
 
 
 def resolve_recipients(
     severity: str,
-    recipient_group_name: str,
+    alert_group: str,
     config: ConfigData,
 ) -> list[RecipientData]:
     recipients_by_id = _build_recipient_lookup(config.get("recipients", []))
@@ -108,6 +108,6 @@ def resolve_recipients(
         if _matches_recipient(
             recipient,
             severity,
-            recipient_group_name,
+            alert_group,
         )
     ]

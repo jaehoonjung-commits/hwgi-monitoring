@@ -3,7 +3,7 @@ recipients:
     phone_number: "010-1111-1111"
     email: "user1@example.com"
     team_name: "backend-team"
-    recipient_group_name: "dev-1"
+    alert_group: "dev-1"
     instance_name: "instance-1"
     alert_receive_level:
       - critical
@@ -17,7 +17,7 @@ recipients:
     phone_number: "010-2222-2222"
     email: "user2@example.com"
     team_name: "backend-team"
-    recipient_group_name: "dev-1"
+    alert_group: "dev-1"
     instance_name: "instance-1"
     alert_receive_level:
       - warning
@@ -31,7 +31,7 @@ recipients:
     phone_number: "010-3333-3333"
     email: "jaehoon.jung@kubeworks.net"
     team_name: "infra-team"
-    recipient_group_name: "infra-1"
+    alert_group: "infra-1"
     instance_name: "instance-2"
     alert_receive_level:
       - warning
@@ -43,7 +43,7 @@ recipients:
     phone_number: "010-4444-4444"
     email: "hooney.jung@gmail.com"
     team_name: "infra-team"
-    recipient_group_name: "infra-1"
+    alert_group: "infra-1"
     instance_name: "instance-2"
     alert_receive_level:
       - critical

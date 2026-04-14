@@ -6,6 +6,11 @@ from uuid import uuid4
 import config
 from models import AlertData, RecipientData
 
+# Global sequence counter for unique 6-digit sequence
+_sequence_counter = 0
+
+def build_alert_summary(recipient: RecipientData, alert: AlertData) -> str:
+
 
 def build_alert_summary(recipient: RecipientData, alert: AlertData) -> str:
     labels = alert.get("labels", {})
@@ -58,10 +63,17 @@ def normalize_phone_number(phone: str) -> str:
     return "".join(ch for ch in phone if ch.isdigit())
 
 
-def build_ums_in_global_no() -> str:
-    prefix = datetime.now().strftime("%Y%m%d%H%M%S%f")
-    suffix = uuid4().hex[:8].upper()
-    return f"{prefix}{config.UMS_APPL_CD}{suffix}"
+def build_ums_if_global_no() -> str:
+    global _sequence_counter
+    _sequence_counter += 1
+    if _sequence_counter > 999999:
+        _sequence_counter = 1  # Reset if exceeds 6 digits
+    
+    prefix = datetime.now().strftime("%Y%m%d%H%M%S")  # YYYYMMDDHHMMSS (14 digits)
+    milliseconds = datetime.now().strftime("%f")[:3]  # milliseconds (3 digits)
+    linkage_code = config.UMS_APPL_CD  # linkage institution code (4 digits)
+    sequence = f"{_sequence_counter:06d}"  # 6-digit non-overlapping sequence
+    return f"{prefix}{milliseconds}{linkage_code}{sequence}"
 
 
 def build_ums_kakao_jonmun(alert: AlertData) -> str:
@@ -86,7 +98,7 @@ def build_ums_kakao_payload(recipient: RecipientData, alert: AlertData) -> dict:
 
     return {
         "header": {
-            "ifGlobalNo": build_ums_in_global_no(),
+            "ifGlobalNo": build_ums_if_global_no(),
             "chnlSysCd": config.UMS_CHNL_SYS_CD,
             "ifOrgCd": config.UMS_IF_ORG_CD,
             "applCd": config.UMS_APPL_CD,
