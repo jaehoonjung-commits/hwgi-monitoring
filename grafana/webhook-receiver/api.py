@@ -13,6 +13,7 @@ from fastapi.responses import HTMLResponse
 from config import RECIPIENT_CONFIG_PATH
 from recipients import load_recipient_config, resolve_recipients
 from recipients_view import render_recipients_page
+from test_ui import render_test_page
 from channels import send_notification
 from models import ConfigData
 
@@ -218,3 +219,9 @@ async def receive_ums_request(request: Request) -> dict:
             "reMsg": "SUCCESS",
         },
     }
+
+
+async def view_test_page() -> HTMLResponse:
+    """Render webhook testing UI page."""
+    html = render_test_page()
+    return HTMLResponse(content=html)

@@ -16,9 +16,10 @@ Usage:
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 import config
-from api import healthcheck, receive_grafana_webhook, receive_ums_request, view_recipients
+from api import healthcheck, receive_grafana_webhook, receive_ums_request, view_recipients, view_test_page
 
 # Configure logging
 raw_log_level = config.LOG_LEVEL
@@ -34,6 +35,15 @@ app = FastAPI(
     title="Grafana Webhook Receiver",
     description="Receives Grafana alert webhooks and routes to notification channels",
     version="1.0.0",
+)
+
+# Add CORS middleware to allow fetch requests from the UI
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for testing
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -60,3 +70,9 @@ async def post_ums_request(request: Request):
 async def get_recipients():
     """Recipient configuration viewer endpoint."""
     return await view_recipients()
+
+
+@app.get("/curl-test")
+async def get_test():
+    """Webhook testing UI endpoint."""
+    return await view_test_page()
