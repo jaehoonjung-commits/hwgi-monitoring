@@ -1,17 +1,4 @@
-"""
-Grafana Webhook Receiver - FastAPI application.
-
-Main entry point that initializes the FastAPI app and registers route handlers.
-
-Environment variables:
-  - LOG_LEVEL: Logging level (default: INFO)
-  - RECIPIENT_CONFIG_PATH: Path to recipients.yaml (default: recipients.yaml)
-  - GMAIL_USER, GMAIL_APP_PASSWORD: Gmail credentials
-  - UMS_API_URL, UMS_API_KEY, ...: UMS relay credentials for kakao channel
-
-Usage:
-  uvicorn main:app --host 0.0.0.0 --port 8000
-"""
+"""FastAPI application entry point."""
 
 import logging
 
@@ -19,9 +6,19 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import config
-from api import healthcheck, receive_grafana_webhook, receive_ums_request, view_recipients, view_test_page
+from api import (
+    execute_test_request,
+    generate_if_global_no,
+    get_grafana_filter_options,
+    healthcheck,
+    preview_kakao_requests,
+    receive_grafana_webhook,
+    receive_ums_request,
+    view_recipients,
+    view_test_page,
+    view_test_script,
+)
 
-# Configure logging
 raw_log_level = config.LOG_LEVEL
 log_level = getattr(logging, raw_log_level, logging.INFO)
 
@@ -30,7 +27,6 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
-# Create FastAPI application
 app = FastAPI(
     title="Grafana Webhook Receiver",
     description="Receives Grafana alert webhooks and routes to notification channels",
@@ -40,42 +36,59 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# Add CORS middleware to allow fetch requests from the UI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for testing
-    allow_credentials=True,
+    allow_origins=config.CORS_ALLOW_ORIGINS,
+    allow_credentials=config.CORS_ALLOW_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# Register routes
 @app.get("/")
 async def get_health():
-    """Health check endpoint."""
     return await healthcheck()
 
 
 @app.post("/webhook/grafana")
 async def post_webhook(request: Request):
-    """Grafana webhook receiver endpoint."""
     return await receive_grafana_webhook(request)
 
 
-@app.post("/hwgi/ums/UMSMEMMA020010000")
+@app.post("/hwgi/ums/UMSMUMS010010000")
 async def post_ums_request(request: Request):
-    """UMS test request receiver endpoint."""
     return await receive_ums_request(request)
 
 
 @app.get("/recipients")
 async def get_recipients():
-    """Recipient configuration viewer endpoint."""
     return await view_recipients()
 
 
 @app.get("/curl-test")
 async def get_test():
-    """Webhook testing UI endpoint."""
     return await view_test_page()
+
+
+@app.get("/curl-test.js")
+async def get_test_script():
+    return await view_test_script()
+
+
+@app.get("/api/generate-if-global-no")
+async def get_if_global_no():
+    return await generate_if_global_no()
+
+
+@app.post("/api/execute-curl-test")
+async def post_execute_curl_test(request: Request):
+    return await execute_test_request(request)
+
+
+@app.post("/api/preview-kakao-requests")
+async def post_preview_kakao_requests(request: Request):
+    return await preview_kakao_requests(request)
+
+
+@app.get("/api/grafana-filter-options")
+async def get_api_grafana_filter_options():
+    return await get_grafana_filter_options()

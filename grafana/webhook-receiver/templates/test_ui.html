@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook 테스트 - Grafana Webhook Receiver</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #1f2937;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+        .header {
+            padding: 20px 24px;
+            background: #1b5e20;
+            color: #fff;
+        }
+        .content { padding: 24px; }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .panel {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            background: #fcfffc;
+        }
+        .panel h2 {
+            margin: 0 0 12px;
+            font-size: 18px;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .tab-btn {
+            border: 1px solid #9ca3af;
+            background: #fff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: #2e7d32;
+            color: #fff;
+            border-color: #2e7d32;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 13px; color: #374151; }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+        .button-group {
+            margin-top: 14px;
+            display: flex;
+            gap: 8px;
+        }
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-primary { background: #2e7d32; color: #fff; }
+        .btn-secondary { background: #e5e7eb; color: #111827; }
+        .btn-copy { background: #1565c0; color: #fff; }
+        .btn-execute { background: #ef6c00; color: #fff; }
+        .curl-command {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            padding: 12px;
+            min-height: 120px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .copy-button {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        .success-message {
+            margin-top: 8px;
+            color: #2e7d32;
+            display: none;
+        }
+        .response-container {
+            margin-top: 16px;
+            display: none;
+        }
+        .response-container.active { display: block; }
+        .response-status {
+            margin-bottom: 8px;
+            font-weight: 700;
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+        .response-status.success { background: #e8f5e9; color: #1b5e20; }
+        .response-status.error { background: #ffebee; color: #b71c1c; }
+        .response-body {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #f9fafb;
+            padding: 12px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+        @media (max-width: 900px) {
+            .fields { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="margin: 0; font-size: 22px;">Webhook Receiver Curl Test</h1>
+            <p style="margin: 6px 0 0; opacity: 0.9;">Grafana/UMS 요청 생성 및 실행 테스트</p>
+        </div>
+
+        <div class="content">
+            <div class="grid">
+                <div class="panel">
+                    <h2>입력값</h2>
+                    <div class="tabs">
+                        <button type="button" class="tab-btn active" onclick="switchTab(event, 'grafana-tab')">Grafana</button>
+                        <button type="button" class="tab-btn" onclick="switchTab(event, 'ums-tab')">UMS</button>
+                    </div>
+
+                    <div id="grafana-tab" class="tab-content active">
+                        <div class="fields">
+                            <div class="form-group"><label>UMS API Endpoint</label><input id="grafana_api_url" value="http://ums-service.example.com:8080/api/ums" placeholder="http://ums-service.example.com:8080/api/ums"></div>
+                            <div class="form-group"><label>Alert Name</label><input id="grafana_alertname" value="HighCPUUsage"></div>
+                            <div class="form-group"><label>Severity</label><select id="grafana_severity"><option value="warning">warning</option></select></div>
+                            <div class="form-group"><label>Instance</label><input id="grafana_instance" value="instance-1"></div>
+                            <div class="form-group"><label>Group</label><select id="grafana_group"><option value="dev-1">dev-1</option></select></div>
+                            <div class="form-group"><label>Summary</label><input id="grafana_summary" value="CPU usage is high"></div>
+                            <div class="form-group"><label>Description</label><input id="grafana_description" value="CPU usage is above 90% for 5 minutes"></div>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="generateGrafanaCurl()">Generate Curl</button>
+                            <button class="btn-secondary" onclick="clearGrafanaForm()">Clear</button>
+                        </div>
+                    </div>
+
+                    <div id="ums-tab" class="tab-content">
+                        <div class="fields">
+                            <div class="form-group"><label>UMS API Endpoint</label><input id="ums_api_url" value="http://ums-service.example.com:8080/api/ums" placeholder="http://ums-service.example.com:8080/api/ums"></div>
+                            <div class="form-group"><label>Alert Name</label><input id="ums_alertname" value="자원사용량경고"></div>
+                            <div class="form-group"><label>Instance</label><input id="ums_instance" value="DEVOPS 클러스터 1번 노드"></div>
+                            <div class="form-group"><label>Summary</label><input id="ums_summary" value="노드의 사용량이 90% 이상입니다"></div>
+                            <div class="form-group"><label>Receiver Name</label><input id="ums_receiver_name" value="정재훈"></div>
+                            <div class="form-group"><label>Receiver Phone</label><input id="ums_receiver_phone" value="01020083890"></div>
+                            <div class="form-group"><label>Ecare No</label><input id="ums_ecare" value="3402"></div>
+                            <div class="form-group"><label>Channel</label><input id="ums_channel" value="A"></div>
+                        </div>
+                        <div class="button-group">
+                            <button class="btn-primary" onclick="generateUmsCurl()">Generate Curl</button>
+                            <button class="btn-secondary" onclick="clearUmsForm()">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>Curl 명령어</h2>
+                    <div id="curl-output" class="curl-command">Ready to generate...</div>
+                    <div class="copy-button">
+                        <button type="button" class="btn-copy" onclick="copyCurl()">Copy</button>
+                        <button type="button" class="btn-execute" id="execute-btn" onclick="executeCurl()">Execute</button>
+                    </div>
+                    <div id="success-message" class="success-message">Copied to clipboard</div>
+
+                    <div id="response-container" class="response-container">
+                        <h3 style="margin-bottom: 10px;">응답 결과</h3>
+                        <div id="response-status" class="response-status"></div>
+                        <div id="response-body" class="response-body"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.SERVER_UMS_API_URL = "__UMS_API_URL__";
+    </script>
+    <script src="/curl-test.js"></script>
+</body>
+</html>

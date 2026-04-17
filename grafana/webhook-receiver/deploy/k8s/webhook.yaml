@@ -69,6 +69,27 @@ data:
         notification_channels:
           - gmail
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webhook-app-config
+data:
+  LOG_LEVEL: "INFO"
+  RECIPIENT_CONFIG_PATH: "/config/recipients.yaml"
+  FILE_OUTPUT_PATH: "/app/logs/notification_results.log"
+  UMS_API_URL: "http://ums-service.example.com:8080/api/ums"
+  UMS_CHNL_SYS_CD: "AAA"
+  UMS_IF_ORG_CD: "UMS"
+  UMS_APPL_CD: "MUMS"
+  UMS_IF_KIND_CD: "0100"
+  UMS_IF_TX_CD: "10000"
+  UMS_ECARE_NO: "3402"
+  UMS_CHANNEL: "A"
+  UMS_TMPL_TYPE: "J"
+  UMS_SENDER_NAME: "Grafana"
+  UMS_SENDER_PHONE: "1566-8000"
+  UMS_TIMEOUT_SEC: "5"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -87,11 +108,10 @@ spec:
         - name: webhook
           image: flytux/grafana-webhook-receiver 
           imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: webhook-app-config
           env:
-            - name: RECIPIENT_CONFIG_PATH
-              value: /config/recipients.yaml
-            - name: FILE_OUTPUT_PATH
-              value: /tmp/notification_results.log
             - name: GMAIL_USER
               value: "jaehoon.jung@kubeworks.net"
             - name: GMAIL_APP_PASSWORD

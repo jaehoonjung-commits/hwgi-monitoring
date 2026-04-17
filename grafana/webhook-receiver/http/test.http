@@ -19,7 +19,7 @@ Content-Type: application/json
         "description": "CPU usage is above 90% for 5 minutes"
       },
       "startsAt": "2026-04-07T10:00:00Z",
-      "endsAt": "0001-01-01T00:00:00Z"
+      "endsAt": "2026-04-07T10:05:00Z"
     }
   ]
 }
@@ -27,7 +27,7 @@ Content-Type: application/json
 
 ###
 
-POST http://localhost:8000/hwgi/ums/UMSMEMMA020010000
+POST http://localhost:8000/hwgi/ums/UMSMUMS010010000
 Content-Type: application/json
 
 {
@@ -35,10 +35,10 @@ Content-Type: application/json
     "ifGlobalNo": "20260414082425123111AAAA123457",
     "chnlSysCd": "AAA",
     "ifOrgCd": "UMS",
-    "applCd": "GRFN",
+    "applCd": "MUMS",
     "ifKindCd": "0100",
     "ifTxCd": "10000",
-    "sftno": "8094310",
+    "stfno": "8094310",
     "respCd": "",
     "respMsg": ""
   },
@@ -46,11 +46,12 @@ Content-Type: application/json
     "cnt": 1,
     "request": [
       {
-        "ecardNo": 3402,
+        "ecareNo": 3402,
         "channel": "A",
         "tmplType": "J",
-        "receivcerNm": "정재훈",
+        "receiverNm": "정재훈",
         "receiver": "01020083890",
+        "sender": "1566-8000",
         "senderNm": "한화손해보험",
         "reqUserId": "8094310",
         "jonmun": "@s@|f|6|그라파나|자원사용량경고|DEVOPS 클러스터 1번 노드의 사용량이 90% 이상입니다|08|31|22"

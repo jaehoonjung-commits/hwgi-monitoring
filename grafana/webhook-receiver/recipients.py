@@ -40,20 +40,32 @@ def load_recipient_config() -> ConfigData:
 
 
 def normalize_recipient(recipient: RecipientData) -> RecipientData:
-    return {
-        "id": str(recipient.get("id", "")),
-        "phone_number": str(recipient.get("phone_number", "")),
-        "email": str(recipient.get("email", "")),
-        "team_name": str(recipient.get("team_name", "")),
-        "alert_group": str(recipient.get("alert_group", "")),
-        "instance_name": str(recipient.get("instance_name", "")),
-        "alert_receive_level": _normalize_string_list(
-            recipient.get("alert_receive_level", "info")
-        ),
-        "notification_channels": _normalize_string_list(
-            recipient.get("notification_channels", ["gmail"])
-        ),
-    }
+    normalized = dict(recipient)
+    alert_group = str(
+        recipient.get("alert_group", recipient.get("recipient_group_name", ""))
+    )
+
+    normalized.update(
+        {
+            "id": str(recipient.get("id", "")),
+            "phone_number": str(recipient.get("phone_number", "")),
+            "email": str(recipient.get("email", "")),
+            "team_name": str(recipient.get("team_name", "")),
+            "alert_group": alert_group,
+            "recipient_group_name": str(
+                recipient.get("recipient_group_name", alert_group)
+            ),
+            "instance_name": str(recipient.get("instance_name", "")),
+            "alert_receive_level": _normalize_string_list(
+                recipient.get("alert_receive_level", "info")
+            ),
+            "notification_channels": _normalize_string_list(
+                recipient.get("notification_channels", ["gmail"])
+            ),
+        }
+    )
+
+    return normalized
 
 
 def _can_receive_alert(recipient_level: str | list[str], severity: str) -> bool:
@@ -111,3 +123,28 @@ def resolve_recipients(
             alert_group,
         )
     ]
+
+
+def extract_grafana_filter_options(config: ConfigData) -> dict[str, list[str]]:
+    recipients_by_id = _build_recipient_lookup(config.get("recipients", []))
+
+    severities = sorted(
+        {
+            level
+            for recipient in recipients_by_id.values()
+            for level in recipient.get("alert_receive_level", [])
+            if level
+        }
+    )
+    groups = sorted(
+        {
+            str(recipient.get("alert_group", "")).strip()
+            for recipient in recipients_by_id.values()
+            if str(recipient.get("alert_group", "")).strip()
+        }
+    )
+
+    return {
+        "severities": severities,
+        "groups": groups,
+    }

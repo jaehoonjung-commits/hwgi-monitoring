@@ -13,8 +13,8 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 LOG_LEVEL=DEBUG \
-RECIPIENT_CONFIG_PATH=recipients.yaml \
-FILE_OUTPUT_PATH=notification_results.log \
+RECIPIENT_CONFIG_PATH=configs/recipients.yaml \
+FILE_OUTPUT_PATH=logs/notification_results.log \
 GMAIL_USER=sender@gmail.com \
 GMAIL_APP_PASSWORD=abcdefghijklmnop \
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
@@ -25,18 +25,20 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 이미지 빌드:
 
 ```bash
-docker build -t grafana-webhook-receiver .
+docker build -f deploy/docker/Dockerfile -t grafana-webhook-receiver .
 ```
 
 컨테이너 실행:
 
 ```bash
 docker run --rm -p 8000:8000 \
-  -e FILE_OUTPUT_PATH=/tmp/notification_results.log \
   -e GMAIL_USER=jaehoon.jung@kubeworks.net \
   -e GMAIL_APP_PASSWORD="owai wpqi oecn wvnm" \
   grafana-webhook-receiver
 ```
+
+Docker 로컬 실행은 `config.py` 기본값을 그대로 사용합니다.
+필요한 값만 `-e`로 개별 오버라이드해서 실행하면 됩니다.
 
 Gmail은 일반 계정 비밀번호가 아니라 앱 비밀번호를 사용해야 합니다.
 
@@ -109,6 +111,8 @@ curl -X POST http://localhost:8000/webhook/grafana \\
 `kakao` 채널은 UMS 엔드포인트로 전문을 생성해 전송합니다.
 
 - 필수: `UMS_API_URL`
-- 선택: `UMS_API_KEY`, `UMS_CHNL_SYS_CD`, `UMS_IF_ORG_CD`, `UMS_APPL_CD`, `UMS_IF_KIND_CD`, `UMS_IF_TX_CD`, `UMS_SFTNO`, `UMS_ECARD_NO`, `UMS_CHANNEL`, `UMS_TMPL_TYPE`, `UMS_SENDER_NAME`, `UMS_TIMEOUT_SEC`
+- 선택: `UMS_CHNL_SYS_CD`, `UMS_IF_ORG_CD`, `UMS_APPL_CD`, `UMS_IF_KIND_CD`, `UMS_IF_TX_CD`, `UMS_STFNO`, `UMS_ECARE_NO`, `UMS_CHANNEL`, `UMS_TMPL_TYPE`, `UMS_SENDER_NAME`, `UMS_SENDER_PHONE`, `UMS_TIMEOUT_SEC`
 
 현재 예시 Kubernetes 매니페스트는 `ConfigMap`을 `/config/recipients.yaml`에 읽기 전용으로 마운트하며, `/recipients` API는 해당 설정을 조회만 합니다.
+
+Kubernetes 배포 시 애플리케이션 환경변수 오버라이드는 `webhook-app-config` ConfigMap으로 관리합니다.
